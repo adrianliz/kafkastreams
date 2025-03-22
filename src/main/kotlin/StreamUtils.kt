@@ -1,7 +1,12 @@
 import io.github.cdimascio.dotenv.Dotenv
 import org.apache.kafka.clients.admin.NewTopic
+import org.apache.kafka.streams.KafkaStreams
+import org.apache.kafka.streams.Topology
 import java.io.FileInputStream
+import java.time.Duration
 import java.util.Properties
+import java.util.concurrent.CountDownLatch
+import kotlin.system.exitProcess
 
 object StreamsUtils {
   private const val PROPERTIES_FILE_PATH = "src/main/resources/streams.properties"
@@ -9,6 +14,23 @@ object StreamsUtils {
   private const val PARTITIONS = 6
 
   private val dotenv = Dotenv.load()
+
+  fun runTopology(topology: Topology, streamProps: Properties) {
+    val shutdownLatch = CountDownLatch(1)
+    KafkaStreams(topology, streamProps).use { streams ->
+      Runtime.getRuntime().addShutdownHook(Thread {
+        streams.close(Duration.ofSeconds(2))
+        shutdownLatch.countDown()
+      })
+      try {
+        streams.start()
+        shutdownLatch.await()
+      } catch (e: Throwable) {
+        exitProcess(1)
+      }
+    }
+    exitProcess(1)
+  }
 
   fun loadProperties() =
     Properties().apply {
@@ -19,8 +41,10 @@ object StreamsUtils {
             "required username=\"${dotenv["KAFKA_USER"]}\" password=\"${dotenv["KAFKA_PASSWORD"]}\";"
       )
       setProperty("value.converter.schema.registry.url", dotenv["SCHEMA_REGISTRY_URL"])
-      setProperty("value.converter.schema.registry.basic.auth.user.info",
-        "${dotenv["SCHEMA_REGISTRY_USER"]}:${dotenv["SCHEMA_REGISTRY_PASSWORD"]}")
+      setProperty(
+        "value.converter.schema.registry.basic.auth.user.info",
+        "${dotenv["SCHEMA_REGISTRY_USER"]}:${dotenv["SCHEMA_REGISTRY_PASSWORD"]}"
+      )
     }
 
   fun createTopic(topicName: String) = NewTopic(topicName, PARTITIONS, REPLICATION_FACTOR)
