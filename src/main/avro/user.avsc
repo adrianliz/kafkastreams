@@ -1,0 +1,10 @@
+{
+  "namespace": "avro",
+  "type": "record",
+  "name": "User",
+  "fields": [
+    {"name": "name", "type": "string"},
+    {"name": "address", "type": "string"},
+    {"name": "user_id", "type": "string"}
+  ]
+}

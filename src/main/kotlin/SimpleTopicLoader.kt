@@ -8,10 +8,10 @@ import java.util.Properties
 import java.util.stream.Collectors
 
 fun main() {
-  TopicLoader.runProducer(StreamsUtils.loadProperties())
+  SimpleTopicLoader.runProducer(StreamsUtils.loadProperties())
 }
 
-object TopicLoader {
+object SimpleTopicLoader {
   fun runProducer(properties: Properties) {
     properties[ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
     properties[ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java

@@ -40,9 +40,9 @@ object StreamsUtils {
         "sasl.jaas.config", "org.apache.kafka.common.security.plain.PlainLoginModule " +
             "required username=\"${dotenv["KAFKA_USER"]}\" password=\"${dotenv["KAFKA_PASSWORD"]}\";"
       )
-      setProperty("value.converter.schema.registry.url", dotenv["SCHEMA_REGISTRY_URL"])
+      setProperty("schema.registry.url", dotenv["SCHEMA_REGISTRY_URL"])
       setProperty(
-        "value.converter.schema.registry.basic.auth.user.info",
+        "basic.auth.user.info",
         "${dotenv["SCHEMA_REGISTRY_USER"]}:${dotenv["SCHEMA_REGISTRY_PASSWORD"]}"
       )
     }
