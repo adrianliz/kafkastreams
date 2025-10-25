@@ -2,6 +2,8 @@ import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
 import io.github.cdimascio.dotenv.Dotenv
 import org.apache.avro.specific.SpecificRecord
 import org.apache.kafka.clients.admin.NewTopic
+import org.apache.kafka.clients.producer.Callback
+import org.apache.kafka.clients.producer.RecordMetadata
 import org.apache.kafka.streams.KafkaStreams
 import org.apache.kafka.streams.Topology
 import java.io.FileInputStream
@@ -17,6 +19,19 @@ object StreamsUtils {
   private const val PARTITIONS = 6
 
   private val dotenv = Dotenv.load()
+
+  fun producerCallback() =
+    Callback { metadata: RecordMetadata, exception: Exception? ->
+      if (exception != null) {
+        System.out.printf("Producing records encountered error %s %n", exception)
+      } else {
+        System.out.printf(
+          "Record produced - offset - %d timestamp - %d %n",
+          metadata.offset(),
+          metadata.timestamp()
+        )
+      }
+    }
 
   fun runTopology(topology: Topology, streamProps: Properties) {
     val shutdownLatch = CountDownLatch(1)

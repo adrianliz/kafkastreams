@@ -1,14 +1,13 @@
+
 import avro.ApplianceOrder
 import avro.ElectronicOrder
 import avro.User
 import io.confluent.kafka.serializers.KafkaAvroSerializer
 import org.apache.avro.specific.SpecificRecord
 import org.apache.kafka.clients.admin.Admin
-import org.apache.kafka.clients.producer.Callback
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.apache.kafka.clients.producer.RecordMetadata
 import org.apache.kafka.common.serialization.StringSerializer
 import java.time.Instant
 import java.util.Properties
@@ -22,19 +21,7 @@ fun main() {
 
 object JoinsTopicLoader {
   fun runProducer(properties: Properties) {
-    val callback =
-      Callback { metadata: RecordMetadata, exception: Exception? ->
-        if (exception != null) {
-          System.out.printf("Producing records encountered error %s %n", exception)
-        } else {
-          System.out.printf(
-            "Record produced - offset - %d timestamp - %d %n",
-            metadata.offset(),
-            metadata.timestamp()
-          )
-        }
-      }
-
+    val callback = StreamsUtils.producerCallback()
     Admin.create(properties).use { adminClient ->
       KafkaProducer<String, SpecificRecord>(properties).use { producer ->
         val leftSideTopic = properties.getProperty("stream_one.input.topic");
