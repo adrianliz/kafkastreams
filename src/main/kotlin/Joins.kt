@@ -6,7 +6,6 @@ import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
 import org.apache.kafka.common.serialization.Serdes
 import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.StreamsConfig
-import org.apache.kafka.streams.Topology
 import org.apache.kafka.streams.kstream.Consumed
 import org.apache.kafka.streams.kstream.JoinWindows
 import org.apache.kafka.streams.kstream.Joined
@@ -42,7 +41,8 @@ fun main() {
       userInput,
       combinedSerde,
       outputTopic
-    )
+    ).build()
+
   StreamsUtils.runTopology(topology, streamsProps)
 }
 
@@ -53,12 +53,11 @@ object Joins {
     userInput: Pair<String, SpecificAvroSerde<User>>,
     combinedSerde: SpecificAvroSerde<CombinedOrder>,
     outputTopic: String
-  ): Topology {
-    val builder = StreamsBuilder()
+  ) = StreamsBuilder().apply {
     val applianceStream =
-      builder.applianceStream(applianceInput).selectKey { _, value -> value.userId }
+      applianceStream(applianceInput).selectKey { _, value -> value.userId }
     val electronicStream =
-      builder.electronicStream(electronicInput).selectKey { _, value -> value.userId }
+      electronicStream(electronicInput).selectKey { _, value -> value.userId }
 
     val combinedStream =
       applianceStream.join(
@@ -76,7 +75,7 @@ object Joins {
       ).peek { key, value -> println("Stream-Stream Join record key $key value $value") }
 
     combinedStream.leftJoin(
-      builder.userTable(userInput),
+      userTable(userInput),
       ValueJoiner { combinedOrder: CombinedOrder, user: User? ->
         if (user != null) {
           combinedOrder.apply { user_name = user.name }
@@ -89,7 +88,6 @@ object Joins {
       .peek { key, value -> println("Stream-Table Join record key $key value $value") }
 
     combinedStream.to(outputTopic, Produced.with(Serdes.String(), combinedSerde))
-    return builder.build()
   }
 
   private fun StreamsBuilder.electronicStream(electronicInput: Pair<String, SpecificAvroSerde<ElectronicOrder>>) =
