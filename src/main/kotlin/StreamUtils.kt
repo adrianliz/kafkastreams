@@ -1,4 +1,6 @@
+import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
 import io.github.cdimascio.dotenv.Dotenv
+import org.apache.avro.specific.SpecificRecord
 import org.apache.kafka.clients.admin.NewTopic
 import org.apache.kafka.streams.KafkaStreams
 import org.apache.kafka.streams.Topology
@@ -7,6 +9,7 @@ import java.time.Duration
 import java.util.Properties
 import java.util.concurrent.CountDownLatch
 import kotlin.system.exitProcess
+
 
 object StreamsUtils {
   private const val PROPERTIES_FILE_PATH = "src/main/resources/streams.properties"
@@ -23,6 +26,7 @@ object StreamsUtils {
         shutdownLatch.countDown()
       })
       try {
+        streams.cleanUp()
         streams.start()
         shutdownLatch.await()
       } catch (e: Throwable) {
@@ -47,5 +51,19 @@ object StreamsUtils {
       )
     }
 
+  fun propertiesToMap(properties: Properties): MutableMap<String, Any> {
+    val configs = HashMap<String, Any>()
+    properties.forEach { (key, value) ->
+      configs[key.toString()] = value!!
+    }
+    return configs
+  }
+
   fun createTopic(topicName: String) = NewTopic(topicName, PARTITIONS, REPLICATION_FACTOR)
+
+  fun <T : SpecificRecord> getSpecificAvroSerde(config: Map<String, Any>): SpecificAvroSerde<T> {
+    val specificAvroSerde = SpecificAvroSerde<T>()
+    specificAvroSerde.configure(config, false)
+    return specificAvroSerde
+  }
 }

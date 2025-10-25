@@ -13,7 +13,6 @@ import org.apache.kafka.common.serialization.StringSerializer
 import java.time.Instant
 import java.util.Properties
 
-
 fun main() {
   val properties = StreamsUtils.loadProperties()
   properties[ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
